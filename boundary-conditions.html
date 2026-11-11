@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Molecular Dynamics — Boundary Conditions</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<header>
+  <h1>Molecular Dynamics Simulation: A Master's-Level Course</h1>
+  <nav>
+    <a href="index.html">1. Overview</a>
+    <a href="statistical-mechanics.html">2. Statistical Mechanics</a>
+    <a href="force-fields.html">3. Force Fields</a>
+    <a href="integration-algorithms.html">4. Integration Algorithms</a>
+    <a href="ensembles.html">5. Ensembles</a>
+    <a href="temperature-pressure-control.html">6. T/P Control</a>
+    <a href="boundary-conditions.html" class="current">7. Boundary Conditions</a>
+    <a href="analysis.html">8. Analysis Methods</a>
+    <a href="advanced-topics.html">9. Enhanced Sampling</a>
+    <a href="best-practices.html">10. Best Practices</a>
+  </nav>
+</header>
+
+<main>
+  <section>
+    <h2>Periodic Boundary Conditions (PBC)</h2>
+    <p>
+      PBC replicate the simulation box infinitely in all directions to eliminate surface effects.
+      Each particle interacts with the nearest periodic image of every other particle
+      (<strong>minimum image convention</strong>).
+    </p>
+    <pre class="equation">r<sub>ij</sub> = r<sub>j</sub> − r<sub>i</sub> − L round(r<sub>j</sub> − r<sub>i</sub>) / L</pre>
+    <p>
+      For triclinic boxes, the box matrix h transforms fractional to Cartesian coordinates.
+      The minimum image is found in fractional coordinates then transformed back.
+    </p>
+    <p>
+      <strong>Requirement:</strong> Cutoff <em>r<sub>c</sub> ≤ L/2</em> (cubic) or <em>r<sub>c</sub> ≤ min(h<sub>i</sub>/2)</em>
+      to avoid self-interaction. Violation causes artifacts.
+    </p>
+  </section>
+
+  <section>
+    <h2>Box Shapes &amp; Packing</h2>
+    <table>
+      <thead>
+        <tr><th>Box Type</th><th>Volume</th><th>Nearest Images</th><th>Use Case</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Cubic</td><td>L³</td><td>26</td><td>Isotropic systems, simple</td></tr>
+        <tr><td>Rhombic dodecahedron</td><td>0.71 L³</td><td>12</td><td>Spherical solutes; ~29% fewer waters</td></tr>
+        <tr><td>Truncated octahedron</td><td>0.77 L³</td><td>14</td><td>Spherical solutes; optimal sphere packing</td></tr>
+        <tr><td>Triclinic</td><td>det(h)</td><td>26</td><td>General; required for anisotropic NPT</td></tr>
+      </tbody>
+    </table>
+    <p>
+      Rhombic dodecahedron and truncated octahedron are <strong>space-filling polyhedra</strong>
+      that approximate a sphere. They reduce water count by ~25–30% for a given solute–box distance.
+      Most MD codes support them (GROMACS: -bt dodecahedron/octahedron).
+    </p>
+  </section>
+
+  <section>
+    <h2>Long-Range Electrostatics: Ewald &amp; PME</h2>
+    <p>
+      The Coulomb sum in periodic systems is conditionally convergent. <strong>Ewald summation</strong> splits it:
+    </p>
+    <pre class="equation">U = ½ Σ<sub>i≠j</sub> q<sub>i</sub>q<sub>j</sub> erfc(α r<sub>ij</sub>)/r<sub>ij</sub>  +  ½ (1/πV) Σ<sub>k≠0</sub> (4π/k²) |Σ q<sub>j</sub> exp(−ik·r<sub>j</sub>)|² exp(−k²/4α²)  −  α/√π Σ q<sub>i</sub>²</pre>
+    <p>
+      Real space (short-range): erfc damping, cutoff ~1.0 nm. Reciprocal space: Fourier sum over k-vectors.
+      <strong>Particle Mesh Ewald (PME)</strong> interpolates charges onto a grid and uses FFT: O(N log N).
+    </p>
+    <p>
+      <strong>PME Parameters:</strong> Grid spacing ~0.12 nm (≤ 0.15 nm), spline order 4–6,
+      real-space cutoff 1.0–1.2 nm, α chosen so erfc(α r<sub>c</sub>) ~ 10⁻⁵.
+      Force accuracy ~10⁻⁴ kJ/mol/nm. <strong>Always verify energy conservation in NVE with PME.</strong>
+    </p>
+  </section>
+
+  <section>
+    <h2>Lennard-Jones: Cutoffs, Switching &amp; Dispersion Correction</h2>
+    <p>
+      LJ potential is short-range but truncation causes energy/pressure errors.
+    </p>
+    <ul>
+      <li><strong>Plain cutoff</strong> — Discontinuous force at r<sub>c</sub>; energy drift. Obsolete.</li>
+      <li><strong>Force switch</strong> — Smooth force to zero over [r<sub>on</sub>, r<sub>c</sub>]. Better.</li>
+      <li><strong>Potential switch</strong> — Smooth potential to zero. Force not zero at r<sub>c</sub>; small impulse.</li>
+      <li><strong>Long-range dispersion correction</strong> — Analytical tail correction assuming uniform density beyond r<sub>c</sub>:
+      <pre class="equation">ΔU = (8π/3) ρ ε σ³ [ (σ/r<sub>c</sub>)⁹/3 − (σ/r<sub>c</sub>)³ ]    (per particle)</pre>
+      Essential for correct pressure and surface tension.</li>
+    </ul>
+    <p>
+      Standard: r<sub>c</sub> = 1.0–1.2 nm, force switch from 0.9–1.0 nm, dispersion correction ON.
+      For lipid bilayers/membranes, use larger cutoffs (1.4 nm) or LJ-PME.
+    </p>
+  </section>
+
+  <section>
+    <h2>Artifacts of PBC &amp; Finite Size</h2>
+    <ul>
+      <li><strong>Periodic image interactions:</strong> Protein interacts with its own image if box too small.
+          Rule: solute–box distance ≥ 1.0–1.2 nm (2× cutoff).</li>
+      <li><strong>Artificial correlation:</strong> Collective motions (e.g., domain motions) couple to box size.
+          Test by doubling box size.</li>
+      <li><strong>Electrostatic finite-size effects:</strong> Charged systems in PBC have a net neutralizing background.
+          Free energy of charging depends on box size (Born solvation artifact). Correct with
+          <strong>finite-size corrections</strong> (e.g., Rocklin et al. for FEP).</li>
+      <li><strong>Hydrodynamic artifacts:</strong> PBC alters diffusion (D ∝ 1/L). Correction: D(∞) = D(L) + 2.837 k<sub>B</sub>T / (6πηL).</li>
+      <li><strong>Pressure tensor anisotropy:</strong> In NPT, PBC forces isotropic pressure; real interfaces have surface tension.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Non-Periodic &amp; Hybrid Boundaries</h2>
+    <p>
+      <strong>Stochastic Boundary / Solvent Boundary:</strong> Inner region (active) MD, outer region Langevin/stochastic.
+      Used for QM/MM boundaries, enzyme active sites.
+    </p>
+    <p>
+      <strong>Implicit solvent (GB/SA, PB):</strong> No explicit water; boundary is the solute surface.
+      Fast but loses explicit water effects (hydrogen bonding, hydrophobic effect).
+    </p>
+    <p>
+      <strong>Slab/2D PBC:</strong> Periodic in xy, non-periodic in z (with vacuum or explicit interface).
+      For membranes, interfaces. Requires Ewald 2D correction (e.g., Ewald3D with large z-spacing + correction).
+    </p>
+  </section>
+
+  <div class="socratic" data-question="bc-1">
+    <p>Explain why the minimum image convention fails if the cutoff exceeds half the box length. For a triclinic box, how is the minimum image determined?</p>
+  </div>
+
+  <div class="socratic" data-question="bc-2">
+    <p>You are running PME with a 1.0 nm real-space cutoff and 0.12 nm grid spacing. The system has a net charge of +2e. What correction does PME apply for the net charge, and how does it affect the computed potential energy and forces? Is the simulation physically meaningful?</p>
+  </div>
+</main>
+
+<footer>
+  <p><a href="temperature-pressure-control.html">← Previous: T/P Control</a> | <a href="analysis.html">Next: Analysis Methods →</a></p>
+</footer>
+
+<script src="socratic.js" defer></script>
+</body>
+</html>

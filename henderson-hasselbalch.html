@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Buffer pH — Beyond Henderson–Hasselbalch</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<header>
+  <h1>Buffer pH: Advanced Theory &amp; Applications</h1>
+  <nav>
+    <a href="index.html">1. Buffer Fundamentals</a>
+    <a href="henderson-hasselbalch.html" class="current">2. Beyond Henderson–Hasselbalch</a>
+    <a href="buffer-capacity.html">3. Buffer Capacity &amp; Design</a>
+  </nav>
+</header>
+
+<main>
+  <section>
+    <h2>Exact Solution: The Full Equilibrium</h2>
+    <p>
+      The Henderson–Hasselbalch equation is an approximation. The exact pH of a buffer comes from solving the
+      full system: mass balance, charge balance, and equilibrium constants.
+    </p>
+    <p>
+      For a buffer with analytical concentrations C<sub>HA</sub> and C<sub>A</sub> (added salt):
+    </p>
+    <pre class="equation">[HA] + [A⁻] = C<sub>HA</sub> + C<sub>A</sub> = C<sub>tot</sub></pre>
+    <pre class="equation">[H⁺] + [Na⁺] = [OH⁻] + [A⁻]    (charge balance, assuming Na⁺ from NaA salt)</pre>
+    <pre class="equation">Kₐ = [H⁺][A⁻]/[HA]    K<sub>w</sub> = [H⁺][OH⁻]</pre>
+    <p>
+      Eliminating [A⁻] and [HA] gives the <strong>exact cubic in [H⁺]</strong>:
+    </p>
+    <pre class="equation">[H⁺]³ + (Kₐ + C<sub>A</sub>)[H⁺]² + (KₐC<sub>A</sub> − KₐC<sub>HA</sub> − K<sub>w</sub>)[H⁺] − KₐK<sub>w</sub> = 0</pre>
+    <p>
+      The Henderson–Hasselbalch equation emerges when [H⁺], [OH⁺] ≪ C<sub>HA</sub>, C<sub>A</sub> (the "buffer approximation").
+      This fails for: very dilute buffers, extreme pH, or when pKₐ is near 7 (water autoionization matters).
+    </p>
+  </section>
+
+  <section>
+    <h2>Activity-Based Formulation</h2>
+    <p>
+      The thermodynamically rigorous form uses activities:
+    </p>
+    <pre class="equation">pH = pKₐ° + log( [A⁻]/[HA] ) + log( γ<sub>A⁻</sub>/γ<sub>HA</sub> )</pre>
+    <p>
+      For neutral HA, γ<sub>HA</sub> ≈ 1. For A⁻, γ<sub>A⁻</sub> depends on ionic strength I.
+      Using the Davies equation at 25°C (A = 0.509):
+    </p>
+    <pre class="equation">log γ<sub>A⁻</sub> = −0.509 ( √I/(1+√I) − 0.3I )</pre>
+    <p>
+      At I = 0.1 M, log γ<sub>A⁻</sub> ≈ −0.11 → pH is ~0.11 units <em>lower</em> than the concentration-based H-H prediction.
+      This correction is essential for quantitative work in biological/environmental systems.
+    </p>
+  </section>
+
+  <section>
+    <h2>Buffer Preparation: Target pH → Composition</h2>
+    <p>
+      Given target pH and total concentration C<sub>tot</sub>, the required ratio is:
+    </p>
+    <pre class="equation">r = [A⁻]/[HA] = 10<sup>pH − pKₐ°</sup></pre>
+    <pre class="equation">[HA] = C<sub>tot</sub> / (1 + r)    [A⁻] = r C<sub>tot</sub> / (1 + r)</pre>
+    <p>
+      In practice, one prepares by <strong>titration</strong>: start with the acid (or base) form, add strong base (or acid)
+      while monitoring pH with a calibrated electrode. This automatically accounts for activity, temperature, and impurities.
+    </p>
+    <p>
+      For polyprotic systems (e.g., phosphate), prepare at the desired pH using the relevant pKₐ pair
+      (pKₐ₂ = 7.20 for H₂PO₄⁻/HPO₄²⁻). The other protonation states are present at negligible levels
+      if pH is within ±1.5 of the working pKₐ.
+    </p>
+  </section>
+
+  <section>
+    <h2>Non-Ideal Effects: Specific Ion Interactions</h2>
+    <p>
+      Beyond Debye–Hückel, specific ion interactions (e.g., Na⁺–HPO₄²⁻ ion pairing) can shift apparent pKₐ.
+      The <strong>Pitzer equations</strong> or <strong>Specific Ion Interaction Theory (SIT)</strong> model these:
+    </p>
+    <pre class="equation">log γ<sub>A⁻</sub> = −A z²√I/(1+√I) + Σ ε<sub>ij</sub> m<sub>j</sub></pre>
+    <p>
+      where ε<sub>ij</sub> are interaction coefficients. For phosphate buffers, Na⁺–HPO₄²⁻ pairing is significant
+      at > 0.1 M, causing the apparent pKₐ₂ to increase by ~0.05 units at 0.5 M NaCl.
+    </p>
+  </section>
+
+  <div class="socratic" data-question="adv-hh-1">
+    <p>Show that the Henderson–Hasselbalch equation is recovered from the exact cubic when [H⁺], [OH⁻] ≪ C<sub>HA</sub>, C<sub>A</sub>. What is the leading-order error term?</p>
+  </div>
+
+  <div class="socratic" data-question="adv-hh-2">
+    <p>You need 1 L of 0.1 M phosphate buffer at pH 7.40 (pKₐ₂ = 7.20). Calculate the masses of NaH₂PO₄·H₂O (MW 138.0) and Na₂HPO₄ (MW 142.0) required. Then estimate the ionic strength and the activity-corrected pH using the Davies equation.</p>
+  </div>
+</main>
+
+<footer>
+  <p><a href="index.html">← Previous: Buffer Fundamentals</a> | <a href="buffer-capacity.html">Next: Buffer Capacity &amp; Design →</a></p>
+</footer>
+
+<script src="socratic.js" defer></script>
+</body>
+</html>

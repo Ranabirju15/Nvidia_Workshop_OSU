@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Molecular Dynamics — Force Fields</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<header>
+  <h1>Molecular Dynamics Simulation: A Master's-Level Course</h1>
+  <nav>
+    <a href="index.html">1. Overview</a>
+    <a href="statistical-mechanics.html">2. Statistical Mechanics</a>
+    <a href="force-fields.html" class="current">3. Force Fields</a>
+    <a href="integration-algorithms.html">4. Integration Algorithms</a>
+    <a href="ensembles.html">5. Ensembles</a>
+    <a href="temperature-pressure-control.html">6. T/P Control</a>
+    <a href="boundary-conditions.html">7. Boundary Conditions</a>
+    <a href="analysis.html">8. Analysis Methods</a>
+    <a href="advanced-topics.html">9. Enhanced Sampling</a>
+    <a href="best-practices.html">10. Best Practices</a>
+  </nav>
+</header>
+
+<main>
+  <section>
+    <h2>Force Field Functional Form</h2>
+    <p>
+      A classical force field expresses the potential energy U as a sum of bonded and nonbonded terms:
+    </p>
+    <pre class="equation">U = U<sub>bond</sub> + U<sub>angle</sub> + U<sub>dihedral</sub> + U<sub>improper</sub> + U<sub>nonbonded</sub></pre>
+    <pre class="equation">U<sub>bond</sub> = Σ<sub>bonds</sub> ½ k<sub>b</sub> (r − r<sub>0</sub>)²</pre>
+    <pre class="equation">U<sub>angle</sub> = Σ<sub>angles</sub> ½ k<sub>θ</sub> (θ − θ<sub>0</sub>)²</pre>
+    <pre class="equation">U<sub>dihedral</sub> = Σ<sub>dihedrals</sub> k<sub>φ</sub> [1 + cos(nφ − δ)]</pre>
+    <pre class="equation">U<sub>nonbonded</sub> = Σ<sub>i&lt;j</sub> [ 4ε<sub>ij</sub> ( (σ<sub>ij</sub>/r<sub>ij</sub>)¹² − (σ<sub>ij</sub>/r<sub>ij</sub>)⁶ ) + q<sub>i</sub>q<sub>j</sub> / (4πε<sub>0</sub>ε<sub>r</sub> r<sub>ij</sub>) ]</pre>
+    <p>
+      This is the standard "Class I" additive force field form (AMBER, CHARMM, GROMOS, OPLS). 
+      Class II fields add cross-terms (bond-bond, bond-angle, etc.) and anharmonic potentials (Morse, cubic).
+    </p>
+  </section>
+
+  <section>
+    <h2>Major Biomolecular Force Fields</h2>
+    <table>
+      <thead>
+        <tr><th>Force Field</th><th>Type</th><th>Key Features</th><th>Typical Water Model</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>AMBER ff19SB/ff14SB</td><td>Protein</td><td>Modern backbone/sidechain torsion; compatible with TIP3P, OPC</td><td>TIP3P, OPC, TIP4P-Ew</td></tr>
+        <tr><td>CHARMM36m</td><td>Protein/Lipid</td><td>Unified protein/lipid; CMAP correction for backbone</td><td>TIP3P (CHARMM-modified)</td></tr>
+        <tr><td>GROMOS 54A7/2016</td><td>Protein/Lipid</td><td>United-atom option; tuned for condensed phase</td><td>SPC</td></tr>
+        <tr><td>OPLS-AA/M</td><td>Protein/Small mol</td><td>Optimized for liquid properties; 1.14*LJ scaling</td><td>TIP4P, TIP3P</td></tr>
+      </tbody>
+    </table>
+    <p>
+      <strong>Nucleic acids:</strong> AMBER OL15/OL21, CHARMM36, parmbsc1. <strong>Carbohydrates:</strong> GLYCAM, CHARMM36.
+      <strong>Small molecules:</strong> GAFF/GAFF2 (AMBER), CGenFF (CHARMM), OPLS-AA/M. Parametrization via RESP/AM1-BCC charges.
+    </p>
+  </section>
+
+  <section>
+    <h2>Water Models</h2>
+    <p>
+      Water is the most abundant molecule in biomolecular simulations. Choice affects density, diffusion, dielectric, and protein stability.
+    </p>
+    <table>
+      <thead>
+        <tr><th>Model</th><th>Sites</th><th>Polarizable?</th><th>Density (25°C)</th><th>Notes</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>TIP3P</td><td>3</td><td>No</td><td>~0.98 g/cm³</td><td>Standard for AMBER/CHARMM; fast but underestimates dielectric</td></tr>
+        <tr><td>SPC/E</td><td>3</td><td>No</td><td>~1.00 g/cm³</td><td>Better dielectric; GROMOS default</td></tr>
+        <tr><td>TIP4P-Ew</td><td>4</td><td>No</td><td>~1.00 g/cm³</td><td>Excellent for water properties; recommended for AMBER</td></tr>
+        <tr><td>OPC</td><td>4</td><td>No</td><td>~1.00 g/cm³</td><td>Optimized charges; good for ions/proteins</td></tr>
+        <tr><td>TIP4P/2005</td><td>4</td><td>No</td><td>~1.00 g/cm³</td><td>Best overall water properties; slower</td></tr>
+        <tr><td>SWM4-NDP / AMOEBA</td><td>4/5</td><td>Yes</td><td>~1.00 g/cm³</td><td>Polarizable; expensive but accurate for ions/interfaces</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section>
+    <h2>Long-Range Electrostatics</h2>
+    <p>
+      The 1/r Coulomb potential requires special treatment in periodic systems. The standard is <strong>Particle Mesh Ewald (PME)</strong>:
+    </p>
+    <pre class="equation">U<sub>elec</sub> = U<sub>real</sub> + U<sub>recip</sub> + U<sub>self</sub> + U<sub>correction</sub></pre>
+    <p>
+      Real space: short-range damped Coulomb (cutoff ~1.0–1.2 nm). Reciprocal space: FFT on grid (spacing ~0.12 nm).
+      PME is O(N log N) and essential for correct electrostatics. Reaction-field and cutoff methods are obsolete for production.
+    </p>
+    <p>
+      <strong>Lennard-Jones:</strong> Usually cut off at 1.0–1.2 nm with a long-range dispersion correction (energy/pressure).
+      Force-switch or potential-switch functions avoid discontinuities.
+    </p>
+  </section>
+
+  <section>
+    <h2>Polarizable &amp; Reactive Force Fields</h2>
+    <p>
+      <strong>Polarizable FF</strong> (AMOEBA, Drude, CHARMM-Drude) add induced dipoles: μ<sub>ind</sub> = α E<sub>local</sub>.
+      Cost ~3–5× additive FF. Essential for: ion channels, metalloproteins, highly charged systems, interfaces.
+    </p>
+    <p>
+      <strong>Reactive FF</strong> (ReaxFF, AIREBO) allow bond breaking/formation via bond-order potentials.
+      Cost ~10–100× classical. Used for combustion, fracture, catalysis. Not for routine biomolecular MD.
+    </p>
+    <p>
+      <strong>Coarse-grained</strong> (Martini 3, SIRAH, MARTINI) map 3–4 heavy atoms to 1 bead. Time step 20–40 fs.
+      Enables μs–ms and μm scales. Loses atomic detail; requires backmapping for analysis.
+    </p>
+  </section>
+
+  <div class="socratic" data-question="ff-1">
+    <p>Compare the dihedral potential forms in AMBER (cosine series) vs. CHARMM (CMAP). Why does CHARMM use a 2D grid correction (CMAP) for φ/ψ backbone dihedrals instead of a simple Fourier series?</p>
+  </div>
+
+  <div class="socratic" data-question="ff-2">
+    <p>You are simulating a protein–ligand complex with a Zn²⁺ ion in the active site. The ligand coordinates Zn²⁺ via two histidines and one cysteine. Which force field approach would you choose (additive, polarizable, or QM/MM)? Justify your choice and discuss the parametrization challenges.</p>
+  </div>
+</main>
+
+<footer>
+  <p><a href="statistical-mechanics.html">← Previous: Statistical Mechanics</a> | <a href="integration-algorithms.html">Next: Integration Algorithms →</a></p>
+</footer>
+
+<script src="socratic.js" defer></script>
+</body>
+</html>

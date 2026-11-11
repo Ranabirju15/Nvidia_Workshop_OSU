@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Molecular Dynamics — Statistical Mechanics Foundations</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<header>
+  <h1>Molecular Dynamics Simulation: A Master's-Level Course</h1>
+  <nav>
+    <a href="index.html">1. Overview</a>
+    <a href="statistical-mechanics.html" class="current">2. Statistical Mechanics</a>
+    <a href="force-fields.html">3. Force Fields</a>
+    <a href="integration-algorithms.html">4. Integration Algorithms</a>
+    <a href="ensembles.html">5. Ensembles</a>
+    <a href="temperature-pressure-control.html">6. T/P Control</a>
+    <a href="boundary-conditions.html">7. Boundary Conditions</a>
+    <a href="analysis.html">8. Analysis Methods</a>
+    <a href="advanced-topics.html">9. Enhanced Sampling</a>
+    <a href="best-practices.html">10. Best Practices</a>
+  </nav>
+</header>
+
+<main>
+  <section>
+    <h2>Phase Space &amp; Ensembles</h2>
+    <p>
+      A classical system of N particles in 3D has a <strong>6N-dimensional phase space</strong> Γ = {r<sub>1</sub>,...,r<sub>N</sub>, p<sub>1</sub>,...,p<sub>N</sub>}.
+      A <strong>microstate</strong> is a single point in Γ. An <strong>ensemble</strong> is a probability distribution ρ(Γ) over phase space.
+    </p>
+    <p>
+      The fundamental postulate: an isolated system in equilibrium explores all accessible microstates with equal probability.
+      This defines the <strong>microcanonical ensemble</strong> (NVE):
+    </p>
+    <pre class="equation">ρ<sub>NVE</sub>(Γ) = δ(E − H(Γ)) / Ω(N,V,E)</pre>
+    <p>
+      where H = K + U is the Hamiltonian, Ω = ∫ δ(E−H) dΓ is the density of states, and entropy S = k<sub>B</sub> ln Ω.
+    </p>
+  </section>
+
+  <section>
+    <h2>Canonical &amp; Isobaric Ensembles</h2>
+    <p>
+      The <strong>canonical ensemble</strong> (NVT) describes a system in thermal contact with a heat bath at temperature T:
+    </p>
+    <pre class="equation">ρ<sub>NVT</sub>(Γ) = exp(−βH(Γ)) / Q(N,V,T)</pre>
+    <pre class="equation">Q = ∫ exp(−βH(Γ)) dΓ    (partition function)</pre>
+    <p>
+      The <strong>isothermal-isobaric ensemble</strong> (NPT) adds a volume fluctuations with a pressure bath:
+    </p>
+    <pre class="equation">ρ<sub>NPT</sub>(Γ,V) = exp(−β(H(Γ) + PV)) / Δ(N,P,T)</pre>
+    <pre class="equation">Δ = ∫∫ exp(−β(H+PV)) dΓ dV</pre>
+    <p>
+      Other ensembles: μVT (grand canonical), μPT, etc. MD naturally generates NVE; NVT/NPT require thermostats/barostats.
+    </p>
+  </section>
+
+  <section>
+    <h2>Ergodicity &amp; Time Averages</h2>
+    <p>
+      The <strong>ergodic hypothesis</strong>: for an ergodic system, the time average of an observable A equals its ensemble average:
+    </p>
+    <pre class="equation">⟨A⟩<sub>ensemble</sub> = ∫ A(Γ) ρ(Γ) dΓ = lim<sub>τ→∞</sub> (1/τ) ∫<sub>0</sub><sup>τ</sup> A(Γ(t)) dt = ⟨A⟩<sub>time</sub></pre>
+    <p>
+      MD relies on this to compute thermodynamic properties from a single trajectory. <strong>Ergodicity breaking</strong> occurs when
+      the system is trapped in a subset of phase space (e.g., separated by high free energy barriers).
+    </p>
+  </section>
+
+  <section>
+    <h2>Fluctuation–Dissipation &amp; Response</h2>
+    <p>
+      In NVT, fluctuations relate to thermodynamic derivatives:
+    </p>
+    <pre class="equation">⟨(ΔE)²⟩ = k<sub>B</sub>T² C<sub>V</sub>    ⟨(ΔN)²⟩ = k<sub>B</sub>T (∂N/∂μ)<sub>V,T</sub></pre>
+    <pre class="equation">⟨(ΔV)²⟩ = k<sub>B</sub>T κ<sub>T</sub> V    (in NPT)</pre>
+    <p>
+      The <strong>fluctuation–dissipation theorem</strong> connects equilibrium fluctuations to linear response:
+      χ<sub>AB</sub>(t) = β ⟨A(0)B(t)⟩ (for canonical variables). This underlies transport coefficient calculations
+      (Green–Kubo relations).
+    </p>
+  </section>
+
+  <section>
+    <h2>Free Energy &amp; Potential of Mean Force</h2>
+    <p>
+      The <strong>potential of mean force</strong> (PMF) along a reaction coordinate ξ is:
+    </p>
+    <pre class="equation">W(ξ) = −k<sub>B</sub>T ln P(ξ) + const</pre>
+    <p>
+      where P(ξ) is the marginal probability density of ξ. The PMF is the free energy profile; barriers give kinetics
+      via Kramers' theory. Free energy differences between states A and B:
+    </p>
+    <pre class="equation">ΔF = −k<sub>B</sub>T ln ⟨ exp(−βΔU) ⟩<sub>A</sub>    (Zwanzig/FEP)</pre>
+    <pre class="equation">ΔF = ∫<sub>0</sub><sup>1</sup> ⟨ ∂H/∂λ ⟩<sub>λ</sub> dλ    (Thermodynamic Integration)</pre>
+    <p>
+      These are the basis for alchemical free energy calculations.
+    </p>
+  </section>
+
+  <div class="socratic" data-question="stat-mech-1">
+    <p>Derive the expression for the isothermal compressibility κ<sub>T</sub> in terms of volume fluctuations in the NPT ensemble. How would you compute κ<sub>T</sub> from an NPT MD trajectory?</p>
+  </div>
+
+  <div class="socratic" data-question="stat-mech-2">
+    <p>Explain the difference between the potential energy U(r) and the potential of mean force W(ξ). Why is W(ξ) the relevant quantity for conformational transitions, and how does it account for entropic effects?</p>
+  </div>
+</main>
+
+<footer>
+  <p><a href="index.html">← Previous: Overview</a> | <a href="force-fields.html">Next: Force Fields →</a></p>
+</footer>
+
+<script src="socratic.js" defer></script>
+</body>
+</html>

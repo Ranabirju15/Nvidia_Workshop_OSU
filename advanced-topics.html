@@ -1,0 +1,158 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Molecular Dynamics — Enhanced Sampling</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<header>
+  <h1>Molecular Dynamics Simulation: A Master's-Level Course</h1>
+  <nav>
+    <a href="index.html">1. Overview</a>
+    <a href="statistical-mechanics.html">2. Statistical Mechanics</a>
+    <a href="force-fields.html">3. Force Fields</a>
+    <a href="integration-algorithms.html">4. Integration Algorithms</a>
+    <a href="ensembles.html">5. Ensembles</a>
+    <a href="temperature-pressure-control.html">6. T/P Control</a>
+    <a href="boundary-conditions.html">7. Boundary Conditions</a>
+    <a href="analysis.html">8. Analysis Methods</a>
+    <a href="advanced-topics.html" class="current">9. Enhanced Sampling</a>
+    <a href="best-practices.html">10. Best Practices</a>
+  </nav>
+</header>
+
+<main>
+  <section>
+    <h2>The Sampling Problem</h2>
+    <p>
+      Standard MD is limited by <strong>ergodicity breaking</strong>: high free energy barriers trap the system
+      in metastable states. Timescales for barrier crossing: τ ~ τ<sub>0</sub> exp(ΔF/k<sub>B</sub>T).
+      For ΔF = 10 k<sub>B</sub>T, τ ~ 10⁴ τ<sub>0</sub>; for ΔF = 20 k<sub>B</sub>T, τ ~ 10⁸ τ<sub>0</sub>.
+      With τ<sub>0</sub> ~ ps, this means μs–s barriers are inaccessible to plain MD.
+    </p>
+    <p>
+      <strong>Enhanced sampling methods</strong> accelerate barrier crossing while preserving (or allowing reweighting to)
+      the correct Boltzmann distribution. They fall into several categories:
+    </p>
+  </section>
+
+  <section>
+    <h2>Collective Variable (CV) Based Methods</h2>
+    <p>
+      These bias the simulation along predefined collective variables ξ(r).
+    </p>
+    <ul>
+      <li><strong>Umbrella Sampling:</strong> Harmonic restraints at windows along ξ. WHAM/MBAR combines windows.
+          Rigorous but requires knowing ξ and window spacing.</li>
+      <li><strong>Metadynamics:</strong> History-dependent bias V(ξ,t) = Σ W exp(−(ξ−ξ(t'))²/2σ²).
+          Fills free energy wells; converges to −F(ξ). Well-tempered metadynamics (WTMetaD) controls bias deposition
+          for smooth convergence.</li>
+      <li><strong>Adaptive Biasing Force (ABF):</strong> Estimates mean force ⟨−∇<sub>ξ</sub>U⟩<sub>ξ</sub> on-the-fly
+          and applies counteracting bias. No Gaussians; direct force estimate.</li>
+      <li><strong>Steered MD / Jarzynski:</strong> Pull along ξ at constant velocity. Non-equilibrium work
+          gives ΔF via Jarzynski equality: ΔF = −k<sub>B</sub>T ln ⟨exp(−βW)⟩. Requires many repeats.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Temperature-Based Methods</h2>
+    <p>
+      These modify the temperature to enhance barrier crossing.
+    </p>
+    <ul>
+      <li><strong>Replica Exchange MD (REMD / T-REMD):</strong> M replicas at T<sub>1</sub> < T<sub>2</sub> < ... < T<sub>M</sub>.
+          Exchanges attempted every τ<sub>ex</sub> with Metropolis criterion:
+          P<sub>acc</sub> = min(1, exp[(β<sub>i</sub>−β<sub>j</sub>)(U<sub>j</sub>−U<sub>i</sub>)]).
+          High-T replicas cross barriers; low-T replicas sample correctly. Scales poorly with system size
+          (need ~√N replicas for constant acceptance).</li>
+      <li><strong>Hamiltonian REMD (H-REMD):</strong> Replicas with different Hamiltonians (e.g., scaled interactions,
+          soft-core alchemical). Better scaling for large systems.</li>
+      <li><strong>Simulated Tempering:</strong> Single replica with dynamic T; T is a dynamical variable with
+          expanded ensemble weights. No replica overhead but harder to tune.</li>
+      <li><strong>REST2 (Replica Exchange with Solute Tempering):</strong> Only solute temperature scaled;
+          solvent at 300 K. Far fewer replicas needed for biomolecules.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Alchemical &amp; Free Energy Methods</h2>
+    <p>
+      These compute free energy differences by transforming the Hamiltonian.
+    </p>
+    <ul>
+      <li><strong>Thermodynamic Integration (TI):</strong> ΔG = ∫<sub>0</sub><sup>1</sup> ⟨∂H/∂λ⟩<sub>λ</sub> dλ.
+          Requires multiple λ-windows; soft-core potentials avoid singularities.</li>
+      <li><strong>Free Energy Perturbation (FEP):</strong> ΔG = −k<sub>B</sub>T ln ⟨exp(−βΔU)⟩.
+          BAR/MBAR use forward/reverse work for optimal estimator.</li>
+      <li><strong>λ-Dynamics / Continuous Constant pH:</strong> λ becomes a dynamical variable with fictitious mass.
+          Samples λ continuously; extended ensemble weights give correct distribution.</li>
+      <li><strong>Enveloping Distribution Sampling (EDS):</strong> Single reference state envelops multiple end states.
+          One simulation yields multiple ΔG values.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Path Sampling &amp; Rare Events</h2>
+    <p>
+      For kinetics and transition paths:
+    </p>
+    <ul>
+      <li><strong>Transition Path Sampling (TPS):</strong> Monte Carlo in trajectory space.
+          Harvests reactive trajectories without predefined CV.</li>
+      <li><strong>Transition Interface Sampling (TIS):</strong> Interfaces along path; computes rate constant
+          and mechanism. More efficient than TPS.</li>
+      <li><strong>Milestoning:</strong> Divide space into milestones; compute local kinetics.
+          Assembles global rates from short trajectories.</li>
+      <li><strong>Weighted Ensemble:</strong> Parallel trajectories with splitting/merging to maintain
+          uniform sampling in progress coordinate. Exact kinetics.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Machine Learning Enhanced Sampling</h2>
+    <p>
+      <strong>Deep Learning CVs:</strong> VAE, TICA, or autoencoders learn slow collective variables from data.
+      <strong>Neural Network Bias:</strong> NN learns bias potential (e.g., DeepCV, Reinforcement Learning).
+      <strong>Active Learning:</strong> Iterative sampling + model retraining (e.g., for reaction coordinates).
+    </p>
+    <p>
+      <strong>Caution:</strong> ML methods require validation; they can introduce bias if the model
+      is not flexible enough or overfits. Always verify with independent methods.
+    </p>
+  </section>
+
+  <section>
+    <h2>Choosing an Enhanced Sampling Method</h2>
+    <table>
+      <thead>
+        <tr><th>Goal</th><th>Recommended Method(s)</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Free energy along known CV</td><td>Umbrella Sampling, Metadynamics, ABF</td></tr>
+        <tr><td>Global conformational sampling</td><td>REMD, REST2, Parallel Tempering</td></tr>
+        <tr><td>Binding free energy</td><td>FEP/TI (alchemical), PMF (physical path)</td></tr>
+        <tr><td>Protein folding</td><td>REMD, Metadynamics (with good CVs), MSM from many short MD</td></tr>
+        <tr><td>Rare event kinetics</td><td>TPS, TIS, Milestoning, Weighted Ensemble</td></tr>
+        <tr><td>Unknown CV / High-dimensional</td><td>Variational approaches, ML CVs, Sketch-map</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <div class="socratic" data-question="adv-1">
+    <p>Derive the acceptance criterion for replica exchange between replicas i and j at temperatures T<sub>i</sub> and T<sub>j</sub> with potential energies U<sub>i</sub> and U<sub>j</sub>. Show that it satisfies detailed balance for the joint ensemble.</p>
+  </div>
+
+  <div class="socratic" data-question="adv-2">
+    <p>In well-tempered metadynamics, the bias deposition rate decreases as exp(−V(ξ)/k<sub>B</sub>ΔT). Explain how ΔT controls the trade-off between exploration speed and accuracy of the final free energy estimate. What happens if ΔT is too small or too large?</p>
+  </div>
+</main>
+
+<footer>
+  <p><a href="analysis.html">← Previous: Analysis Methods</a> | <a href="best-practices.html">Next: Best Practices →</a></p>
+</footer>
+
+<script src="socratic.js" defer></script>
+</body>
+</html>

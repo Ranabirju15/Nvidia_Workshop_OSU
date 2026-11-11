@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Molecular Dynamics — Ensembles</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<header>
+  <h1>Molecular Dynamics Simulation: A Master's-Level Course</h1>
+  <nav>
+    <a href="index.html">1. Overview</a>
+    <a href="statistical-mechanics.html">2. Statistical Mechanics</a>
+    <a href="force-fields.html">3. Force Fields</a>
+    <a href="integration-algorithms.html">4. Integration Algorithms</a>
+    <a href="ensembles.html" class="current">5. Ensembles</a>
+    <a href="temperature-pressure-control.html">6. T/P Control</a>
+    <a href="boundary-conditions.html">7. Boundary Conditions</a>
+    <a href="analysis.html">8. Analysis Methods</a>
+    <a href="advanced-topics.html">9. Enhanced Sampling</a>
+    <a href="best-practices.html">10. Best Practices</a>
+  </nav>
+</header>
+
+<main>
+  <section>
+    <h2>Ensemble Classification</h2>
+    <p>
+      MD simulations target specific thermodynamic ensembles. The choice depends on the physical system and properties of interest:
+    </p>
+    <table>
+      <thead>
+        <tr><th>Ensemble</th><th>Fixed</th><th>Fluctuating</th><th>Partition Function</th><th>MD Method</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Microcanonical (NVE)</td><td>N, V, E</td><td>T, P</td><td>Ω(N,V,E)</td><td>Native (Verlet)</td></tr>
+        <tr><td>Canonical (NVT)</td><td>N, V, T</td><td>E, P</td><td>Q(N,V,T)</td><td>Thermostat</td></tr>
+        <tr><td>Isothermal-isobaric (NPT)</td><td>N, P, T</td><td>E, V</td><td>Δ(N,P,T)</td><td>Thermostat + Barostat</td></tr>
+        <tr><td>Grand canonical (μVT)</td><td>μ, V, T</td><td>N, E, P</td><td>Ξ(μ,V,T)</td><td>GCMC/λ-dynamics</td></tr>
+        <tr><td>Isobaric-isoenthalpic (NPH)</td><td>N, P, H</td><td>T, V</td><td>—</td><td>Barostat only</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section>
+    <h2>NVE: The Native MD Ensemble</h2>
+    <p>
+      Standard Verlet integration conserves energy exactly (up to numerical error). NVE is the only ensemble
+      requiring no thermostat/barostat. It is used for:
+    </p>
+    <ul>
+      <li>Testing energy conservation (validates integrator, forces, time step)</li>
+      <li>Microcanonical rate constants (RRKM theory)</li>
+      <li>Reference for comparing thermostat artifacts</li>
+    </ul>
+    <p>
+      <strong>Caution:</strong> Real systems exchange energy with surroundings. NVE simulations of small systems
+      show large T fluctuations (ΔT/T ~ 1/√N). For biomolecules, NVE is rarely used for production.
+    </p>
+  </section>
+
+  <section>
+    <h2>NVT: Constant Temperature</h2>
+    <p>
+      The canonical ensemble is the workhorse for most biomolecular simulations. It corresponds to a system
+      in thermal equilibrium with a large heat bath. Key properties:
+    </p>
+    <ul>
+      <li>Temperature is fixed; energy fluctuates with variance ⟨(ΔE)²⟩ = k<sub>B</sub>T²C<sub>V</sub>.</li>
+      <li>Density is fixed (volume constant); pressure fluctuates.</li>
+      <li>Correct for comparing to experiments at constant T (most lab conditions).</li>
+    </ul>
+    <p>
+      NVT is also used for <strong>free energy calculations</strong> (FEP, TI) where volume changes
+      would complicate the alchemical path.
+    </p>
+  </section>
+
+  <section>
+    <h2>NPT: Constant Pressure &amp; Temperature</h2>
+    <p>
+      The isothermal-isobaric ensemble matches most experimental conditions (1 atm, 298 K). Volume fluctuates:
+    </p>
+    <pre class="equation">⟨(ΔV)²⟩ = k<sub>B</sub>T κ<sub>T</sub> V</pre>
+    <p>
+      NPT is essential for:
+    </p>
+    <ul>
+      <li>Equilibrating density (e.g., new force field, new system)</li>
+      <li>Simulating phase transitions, pressure-dependent phenomena</li>
+      <li>Computing enthalpy H = U + PV and heat capacity C<sub>P</sub></li>
+      <li>Obtaining correct box dimensions for subsequent NVT production</li>
+    </ul>
+    <p>
+      <strong>Barostat choice</strong> matters: isotropic (cubic box) vs. anisotropic (triclinic, membrane normal).
+      Membranes require semi-isotropic (xy-coupled, z-independent) or surface tension control.
+    </p>
+  </section>
+
+  <section>
+    <h2>Advanced Ensembles</h2>
+    <p>
+      <strong>μVT (Grand Canonical):</strong> Particle number fluctuates at fixed chemical potential μ.
+      Implemented via GCMC moves (insertion/deletion) or λ-dynamics. Essential for:
+      adsorption in porous materials, ion concentration equilibration, phase equilibria.
+    </p>
+    <p>
+      <strong>Replica Exchange (REMD):</strong> Multiple replicas at different T (or λ, pH) exchange configurations.
+      Samples rugged free energy landscapes. Not a single ensemble but a sampling strategy.
+    </p>
+    <p>
+      <strong>Constant pH MD:</strong> Protonation states change dynamically via λ-dynamics or Monte Carlo.
+      Couples to solution pH. Important for titratable residues in proteins.
+    </p>
+  </section>
+
+  <section>
+    <h2>Ensemble Equivalence &amp; Finite-Size Effects</h2>
+    <p>
+      In the thermodynamic limit (N→∞), ensembles are equivalent: fluctuations scale as 1/√N.
+      For finite N (typical MD: N ~ 10⁴–10⁵), differences exist:
+    </p>
+    <pre class="equation">C<sub>P</sub> − C<sub>V</sub> = T V α<sub>P</sub>² / κ<sub>T</sub>    (exact)</pre>
+    <p>
+      In NVT, C<sub>V</sub> is measured; in NPT, C<sub>P</sub>. For water at 300 K, C<sub>P</sub> ≈ 75 J/mol·K,
+      C<sub>V</sub> ≈ 65 J/mol·K — a ~15% difference. Always report which ensemble was used.
+    </p>
+    <p>
+      <strong>Finite-size pressure fluctuations:</strong> In NPT, ⟨(ΔP)²⟩ ~ 1/V. Small boxes have huge pressure noise
+      (100s of bar), but this does not invalidate the ensemble — it's a feature, not a bug.
+    </p>
+  </section>
+
+  <div class="socratic" data-question="ens-1">
+    <p>Explain why NVE simulations of a small protein in vacuum show larger temperature fluctuations than the same protein in explicit solvent, even at the same average temperature and number of protein atoms.</p>
+  </div>
+
+  <div class="socratic" data-question="ens-2">
+    <p>You run NPT equilibration of a lipid bilayer and the area per lipid converges to 0.62 nm², but experimental value is 0.65 nm². List at least four possible reasons for this discrepancy, distinguishing between force field limitations, ensemble issues, and simulation setup problems.</p>
+  </div>
+</main>
+
+<footer>
+  <p><a href="integration-algorithms.html">← Previous: Integration Algorithms</a> | <a href="temperature-pressure-control.html">Next: Temperature &amp; Pressure Control →</a></p>
+</footer>
+
+<script src="socratic.js" defer></script>
+</body>
+</html>

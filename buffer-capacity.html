@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Buffer pH — Buffer Capacity &amp; Design</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<header>
+  <h1>Buffer pH: Advanced Theory &amp; Applications</h1>
+  <nav>
+    <a href="index.html">1. Buffer Fundamentals</a>
+    <a href="henderson-hasselbalch.html">2. Beyond Henderson–Hasselbalch</a>
+    <a href="buffer-capacity.html" class="current">3. Buffer Capacity &amp; Design</a>
+  </nav>
+</header>
+
+<main>
+  <section>
+    <h2>Differential Buffer Capacity: Rigorous Definition</h2>
+    <p>
+      The <strong>buffer intensity</strong> (Van Slyke buffer capacity) is defined as:
+    </p>
+    <pre class="equation">β = dC<sub>b</sub>/dpH = −dC<sub>a</sub>/dpH</pre>
+    <p>
+      For a solution containing multiple weak acid/base systems and strong electrolytes, the general expression is:
+    </p>
+    <pre class="equation">β = 2.303 ( [H⁺] + [OH⁻] + Σ<sub>i</sub> C<sub>i</sub> K<sub>a,i</sub>[H⁺] / (K<sub>a,i</sub> + [H⁺])² )</pre>
+    <p>
+      where the sum runs over all weak acid systems i with total concentration C<sub>i</sub> and acid dissociation constant K<sub>a,i</sub>.
+      The three contributions are:
+    </p>
+    <ol>
+      <li><strong>[H⁺]</strong> — Strong acid contribution (dominant at low pH)</li>
+      <li><strong>[OH⁻]</strong> — Strong base contribution (dominant at high pH)</li>
+      <li><strong>Σ C<sub>i</sub> K<sub>a,i</sub>[H⁺]/(K<sub>a,i</sub>+[H⁺])²</strong> — Weak acid/base buffering</li>
+    </ol>
+    <p>
+      Each weak acid contributes a bell-shaped curve centered at pKₐ,i with maximum β<sub>max,i</sub> = 0.576 C<sub>i</sub>
+      (since max of x/(1+x)² = ¼ at x=1, and 2.303/4 = 0.576).
+    </p>
+  </section>
+
+  <section>
+    <h2>Buffer Capacity of Polyprotic &amp; Mixed Systems</h2>
+    <p>
+      For a diprotic acid H₂A (e.g., carbonic acid, pKₐ₁=6.35, pKₐ₂=10.33), the capacity is the sum of two terms:
+    </p>
+    <pre class="equation">β = 2.303 ( [H⁺] + [OH⁻] + C<sub>tot</sub> ( Kₐ₁[H⁺]/(Kₐ₁+[H⁺])² + Kₐ₂[H⁺]/(Kₐ₂+[H⁺])² ) )</pre>
+    <p>
+      If pKₐ₂ − pKₐ₁ > ~3, the two buffering regions are distinct. If closer (e.g., citric acid pKₐ₁=3.13, pKₐ₂=4.76, pKₐ₃=6.40),
+      the peaks merge into a broad plateau. This is exploited in <strong>universal buffers</strong> (e.g., Britton–Robinson).
+    </p>
+    <p>
+      For <strong>mixed buffers</strong> (different acid systems), total β is additive if no cross-reactions occur.
+      This allows designing buffers with flat capacity over a wide pH range (e.g., 0.04 M each of citric, phosphoric, boric acids).
+    </p>
+  </section>
+
+  <section>
+    <h2>Practical Buffer Design Criteria</h2>
+    <p>
+      Choosing a buffer for a specific application requires balancing multiple factors:
+    </p>
+    <table>
+      <thead>
+        <tr><th>Criterion</th><th>Consideration</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>pKₐ vs. target pH</td><td>|pH − pKₐ| < 1 for useful capacity; < 0.5 for high precision</td></tr>
+        <tr><td>Temperature coefficient</td><td>ΔpKₐ/ΔT: Tris (−0.03/°C), HEPES (−0.014/°C), Phosphate (~0/°C)</td></tr>
+        <tr><td>Ionic strength range</td><td>Activity corrections; some buffers (HEPES) have low ionic strength sensitivity</td></tr>
+        <tr><td>Metal ion binding</td><td>Phosphate binds Mg²⁺/Ca²⁺; HEPES, MOPS, PIPES are low-binding</td></tr>
+        <tr><td>Membrane permeability</td><td>Tris, HEPES permeate poorly; phosphate, acetate permeate more</td></tr>
+        <tr><td>Spectroscopic interference</td><td>Absorbance at 260/280 nm (Tris low, phosphate none, Good's buffers vary)</td></tr>
+        <tr><td>Enzyme inhibition</td><td>Phosphate inhibits some kinases; Tris inhibits some dehydrogenases</td></tr>
+        <tr><td>CO₂ sensitivity</td><td>Open vs. closed systems: carbonate buffers equilibrate with atmospheric CO₂</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section>
+    <h2>Buffer Capacity in Open vs. Closed Systems</h2>
+    <p>
+      The carbonate/bicarbonate system (pKₐ₁' = 6.1 for CO₂ + H₂O ⇌ H₂CO₃ ⇌ H⁺ + HCO₃⁻) behaves differently
+      in open (gas exchange) vs. closed systems:
+    </p>
+    <pre class="equation">Closed: β = 2.303 ( [H⁺] + [OH⁻] + C<sub>tot</sub> Kₐ[H⁺]/(Kₐ+[H⁺])² )</pre>
+    <pre class="equation">Open (constant P<sub>CO₂</sub>): β = 2.303 ( [H⁺] + [OH⁻] + [HCO₃⁻] )</pre>
+    <p>
+      In an open system (e.g., blood), β is nearly constant over a wide pH range because [HCO₃⁻] adjusts
+      via CO₂ exchange. This is why blood has high effective buffer capacity despite low total bicarbonate.
+    </p>
+  </section>
+
+  <section>
+    <h2>Numerical Buffer Design</h2>
+    <p>
+      Modern buffer preparation uses numerical speciation solvers (e.g., PHREEQC, Visual MINTEQ, or custom Python).
+      Given target pH, ionic strength, temperature, and total concentration, one solves the full equilibrium
+      for required component masses. Example algorithm:
+    </p>
+    <pre class="equation">
+# Given: target pH, C_tot, T, I_estimate
+pK_a(T) = pK_a(25°C) - (ΔH°/2.303R)(1/T - 1/298.15)
+r = 10^(pH - pK_a(T))
+# Iterate: compute I from concentrations, update γ, recompute r
+    </pre>
+    <p>
+      This accounts for temperature, activity, and all protonation states simultaneously.
+    </p>
+  </section>
+
+  <div class="socratic" data-question="adv-cap-1">
+    <p>Derive the maximum buffer capacity β_max = 0.576 C for a monoprotic weak acid. At what [H⁺] does it occur? Show that at pH = pKₐ ± 1, β = 0.434 C (75% of maximum).</p>
+  </div>
+
+  <div class="socratic" data-question="adv-cap-2">
+    <p>Design a mixed buffer system with flat capacity (β ≥ 0.02 M/pH unit) from pH 5.0 to 9.0 using available Good's buffers (MES pKₐ=6.1, PIPES 6.8, HEPES 7.5, Tris 8.1). Specify concentrations of each component. Justify your choices considering temperature coefficients and metal binding.</p>
+  </div>
+</main>
+
+<footer>
+  <p><a href="henderson-hasselbalch.html">← Previous: Beyond Henderson–Hasselbalch</a></p>
+</footer>
+
+<script src="socratic.js" defer></script>
+</body>
+</html>

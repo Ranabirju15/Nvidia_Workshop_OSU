@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Molecular Dynamics — Integration Algorithms</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<header>
+  <h1>Molecular Dynamics Simulation: A Master's-Level Course</h1>
+  <nav>
+    <a href="index.html">1. Overview</a>
+    <a href="statistical-mechanics.html">2. Statistical Mechanics</a>
+    <a href="force-fields.html">3. Force Fields</a>
+    <a href="integration-algorithms.html" class="current">4. Integration Algorithms</a>
+    <a href="ensembles.html">5. Ensembles</a>
+    <a href="temperature-pressure-control.html">6. T/P Control</a>
+    <a href="boundary-conditions.html">7. Boundary Conditions</a>
+    <a href="analysis.html">8. Analysis Methods</a>
+    <a href="advanced-topics.html">9. Enhanced Sampling</a>
+    <a href="best-practices.html">10. Best Practices</a>
+  </nav>
+</header>
+
+<main>
+  <section>
+    <h2>Requirements for MD Integrators</h2>
+    <p>
+      MD integrators must solve Newton's equations: <em>m d²r/dt² = F(r)</em>. Key requirements:
+    </p>
+    <ol>
+      <li><strong>Time-reversibility</strong> — The exact dynamics is reversible; the integrator should be too.</li>
+      <li><strong>Symplecticity</strong> — Preserves phase space volume (Liouville's theorem); conserves energy long-term.</li>
+      <li><strong>Energy conservation</strong> — In NVE, total energy should fluctuate around a constant (no drift).</li>
+      <li><strong>Large stable time step</strong> — To maximize sampling efficiency.</li>
+      <li><strong>Computational efficiency</strong> — Minimal force evaluations per step.</li>
+    </ol>
+    <p>
+      The <strong>Verlet</strong> and <strong>Velocity Verlet</strong> algorithms are the gold standard — symplectic,
+      time-reversible, and require only 1 force evaluation per step.
+    </p>
+  </section>
+
+  <section>
+    <h2>Verlet Algorithm</h2>
+    <p>
+      Position Verlet (from Taylor expansion):
+    </p>
+    <pre class="equation">r(t+Δt) = 2r(t) − r(t−Δt) + a(t)Δt² + O(Δt⁴)</pre>
+    <p>
+      Velocities are not directly available (can be computed as v(t) = [r(t+Δt)−r(t−Δt)]/(2Δt)).
+      <strong>Velocity Verlet</strong> (preferred) gives positions and velocities at the same time:
+    </p>
+    <pre class="equation">r(t+Δt) = r(t) + v(t)Δt + ½ a(t)Δt²</pre>
+    <pre class="equation">v(t+Δt) = v(t) + ½ [a(t) + a(t+Δt)] Δt</pre>
+    <p>
+      Algorithm: (1) r(t+Δt) from r(t), v(t), a(t). (2) Compute a(t+Δt) from r(t+Δt). (3) v(t+Δt) from v(t), a(t), a(t+Δt).
+      Exactly 1 force evaluation per step.
+    </p>
+  </section>
+
+  <section>
+    <h2>Leapfrog &amp; Beeman</h2>
+    <p>
+      <strong>Leapfrog</strong> (velocity at half-steps):
+    </p>
+    <pre class="equation">v(t+½Δt) = v(t−½Δt) + a(t)Δt</pre>
+    <pre class="equation">r(t+Δt) = r(t) + v(t+½Δt)Δt</pre>
+    <p>
+      Equivalent to Velocity Verlet but velocities are offset. <strong>Beeman</strong> algorithm (for comparison):
+    </p>
+    <pre class="equation">r(t+Δt) = r(t) + v(t)Δt + (4a(t)−a(t−Δt))Δt²/6</pre>
+    <pre class="equation">v(t+Δt) = v(t) + (5a(t+Δt)+8a(t)−a(t−Δt))Δt/12</pre>
+    <p>
+      Beeman is higher order but requires storing previous acceleration; not symplectic. Rarely used in modern MD.
+    </p>
+  </section>
+
+  <section>
+    <h2>Multiple Time Step (MTS) Methods</h2>
+    <p>
+      Forces separate into fast (bonded) and slow (nonbonded). MTS evaluates fast forces every step,
+      slow forces every <em>k</em> steps. <strong>r-RESPA</strong> (reversible reference system propagator algorithm):
+    </p>
+    <pre class="equation">F = F<sub>fast</sub> + F<sub>slow</sub></pre>
+    <p>
+      Propagator: exp(Δt L) ≈ [exp(Δt/2 L<sub>slow</sub>) exp(Δt/2 L<sub>fast</sub>) exp(Δt L<sub>fast</sub>) exp(Δt/2 L<sub>fast</sub>) exp(Δt/2 L<sub>slow</sub>)]<sup>k</sup>
+    </p>
+    <p>
+      Typical: bonded every 1 fs, short-range nonbonded every 2 fs, PME every 4–6 fs.
+      MTS can give 2–3× speedup but risks resonance artifacts if not tuned carefully.
+    </p>
+  </section>
+
+  <section>
+    <h2>Constraints: SHAKE, LINCS, SETTLE</h2>
+    <p>
+      Constraining bonds involving hydrogen (or all bonds) allows 2–4 fs time steps by removing fast vibrations.
+    </p>
+    <ul>
+      <li><strong>SHAKE</strong> — Iterative constraint solver (Gaussian elimination for small clusters). Converges to tolerance; sequential.</li>
+      <li><strong>LINCS</strong> — Linear constraint solver (analytical inversion of constraint matrix). Faster, parallelizable; standard in GROMACS.</li>
+      <li><strong>SETTLE</strong> — Analytical solution for rigid water (3 atoms, 3 constraints). Exact, extremely fast.</li>
+    </ul>
+    <p>
+      Constraints modify the phase space measure; the partition function includes a factor ∏ (1/m<sub>i</sub>)<sup>1/2</sup>.
+      This contributes to the free energy (important for TI/FEP). Velocity Verlet with constraints (RATTLE) is symplectic.
+    </p>
+  </section>
+
+  <section>
+    <h2>Error Analysis &amp; Time Step Selection</h2>
+    <p>
+      <strong>Local truncation error</strong> per step: O(Δt³) for positions, O(Δt²) for velocities (Velocity Verlet).
+      <strong>Global error</strong> after time T: O(Δt²). Energy drift in NVE is O(Δt²) for symplectic integrators.
+    </p>
+    <p>
+      Practical time step choice:
+    </p>
+    <table>
+      <thead>
+        <tr><th>System</th><th>No constraints</th><th>H-bonds constrained</th><th>All bonds constrained</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Standard biomolecular</td><td>0.5–1 fs</td><td>2 fs</td><td>4 fs (with virtual sites)</td></tr>
+        <tr><td>With virtual sites (hydrogen mass repartitioning)</td><td>—</td><td>4 fs</td><td>5 fs</td></tr>
+      </tbody>
+    </table>
+    <p>
+      <strong>Hydrogen Mass Repartitioning (HMR)</strong> shifts mass from heavy atoms to hydrogens, slowing fastest modes.
+      Allows 4 fs with constrained H-bonds. Validated for many properties but affects kinetics.
+    </p>
+  </section>
+
+  <div class="socratic" data-question="integ-1">
+    <p>Prove that the Velocity Verlet algorithm is time-reversible. Then show that it is symplectic for a harmonic oscillator by computing the Jacobian determinant of the map (r,v) → (r',v').</p>
+  </div>
+
+  <div class="socratic" data-question="integ-2">
+    <p>In r-RESPA, the slow force is evaluated every k steps. Derive the resonance condition that limits k. For a system with fastest frequency ω<sub>max</sub> (after constraints), what is the maximum safe outer time step Δt<sub>slow</sub> = k Δt?</p>
+  </div>
+</main>
+
+<footer>
+  <p><a href="force-fields.html">← Previous: Force Fields</a> | <a href="ensembles.html">Next: Ensembles →</a></p>
+</footer>
+
+<script src="socratic.js" defer></script>
+</body>
+</html>

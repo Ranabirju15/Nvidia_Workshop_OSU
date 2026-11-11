@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Molecular Dynamics Simulation — Overview</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<header>
+  <h1>Molecular Dynamics Simulation: A Master's-Level Course</h1>
+  <nav>
+    <a href="index.html" class="current">1. Overview</a>
+    <a href="statistical-mechanics.html">2. Statistical Mechanics</a>
+    <a href="force-fields.html">3. Force Fields</a>
+    <a href="integration-algorithms.html">4. Integration Algorithms</a>
+    <a href="ensembles.html">5. Ensembles</a>
+    <a href="temperature-pressure-control.html">6. T/P Control</a>
+    <a href="boundary-conditions.html">7. Boundary Conditions</a>
+    <a href="analysis.html">8. Analysis Methods</a>
+    <a href="advanced-topics.html">9. Enhanced Sampling</a>
+    <a href="best-practices.html">10. Best Practices</a>
+  </nav>
+</header>
+
+<main>
+  <section>
+    <h2>What is Molecular Dynamics?</h2>
+    <p>
+      Molecular Dynamics (MD) is a computer simulation method for analyzing the physical movements of atoms and molecules.
+      The atoms and molecules are allowed to interact for a fixed period of time, giving a view of the dynamic evolution
+      of the system. From these trajectories, we compute macroscopic observables via statistical mechanics.
+    </p>
+    <p>
+      The core idea: solve Newton's equations of motion for a system of N particles:
+    </p>
+    <pre class="equation">m<sub>i</sub> d²r<sub>i</sub>/dt² = F<sub>i</sub> = −∇<sub>i</sub> U(r<sub>1</sub>,...,r<sub>N</sub>)</pre>
+    <p>
+      where U is the potential energy function (force field), and F<sub>i</sub> is the force on particle i.
+      The trajectory {r<sub>i</sub>(t), v<sub>i</sub>(t)} generates a microcanonical (NVE) ensemble; other ensembles
+      require thermostats/barostats.
+    </p>
+  </section>
+
+  <section>
+    <h2>Length &amp; Time Scales</h2>
+    <table>
+      <thead>
+        <tr><th>System</th><th>Atoms</th><th>Typical Time Step</th><th>Accessible Simulation Time</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Small molecule (vacuum)</td><td>10–100</td><td>0.5–1 fs</td><td>μs–ms</td></tr>
+        <tr><td>Protein in explicit solvent</td><td>10<sup>4</sup>–10<sup>5</sup></td><td>1–2 fs</td><td>ns–μs</td></tr>
+        <tr><td>Membrane protein + bilayer</td><td>10<sup>5</sup>–10<sup>6</sup></td><td>2–4 fs</td><td>μs (specialized HW)</td></tr>
+        <tr><td>Coarse-grained</td><td>10<sup>3</sup>–10<sup>6</sup> beads</td><td>10–50 fs</td><td>ms–s</td></tr>
+      </tbody>
+    </table>
+    <p>
+      The femtosecond time step is dictated by the fastest motions (bond vibrations involving hydrogen).
+      Constraints (SHAKE, LINCS) allow 2–4 fs steps. Specialized hardware (Anton, GPUs) reaches μs–ms for biomolecules.
+    </p>
+  </section>
+
+  <section>
+    <h2>The MD Workflow</h2>
+    <ol>
+      <li><strong>System preparation</strong> — Structure acquisition (PDB, homology modeling), protonation states, solvation, ion placement.</li>
+      <li><strong>Force field assignment</strong> — Atom types, parameters, topology generation.</li>
+      <li><strong>Energy minimization</strong> — Remove bad contacts (steepest descent, conjugate gradient, L-BFGS).</li>
+      <li><strong>Equilibration</strong> — NVT then NPT phases; gradually release restraints; monitor T, P, density, energy.</li>
+      <li><strong>Production run</strong> — Unrestrained simulation in target ensemble; collect trajectory data.</li>
+      <li><strong>Analysis</strong> — RMSD, RMSF, RDF, hydrogen bonds, free energies, conformational clustering, etc.</li>
+    </ol>
+  </section>
+
+  <section>
+    <h2>Key Approximations &amp; Limitations</h2>
+    <ul>
+      <li><strong>Classical nuclei</strong> — No nuclear quantum effects (zero-point energy, tunneling). Path-integral MD addresses this.</li>
+      <li><strong>Born–Oppenheimer approximation</strong> — Electronic structure not explicitly treated; force field is a parametric fit.</li>
+      <li><strong>Force field accuracy</strong> — Fixed charges, no polarization (in standard FF), transferability limits.</li>
+      <li><strong>Finite size &amp; periodicity</strong> — Artifacts from PBC, minimum image convention, Ewald summation errors.</li>
+      <li><strong>Sampling</strong> — Ergodicity breaking; rare events (folding, binding) often inaccessible on standard MD timescales.</li>
+    </ul>
+  </section>
+
+  <div class="socratic" data-question="md-overview-1">
+    <p>Explain why MD uses a femtosecond time step despite wanting to simulate microsecond processes. What determines the maximum stable time step, and how do constraint algorithms (SHAKE/LINCS) change this?</p>
+  </div>
+
+  <div class="socratic" data-question="md-overview-2">
+    <p>A colleague says: "I ran a 100 ns simulation of a protein in water, so I've sampled all relevant conformations." Identify at least three reasons this statement is likely false, even for a well-equilibrated simulation.</p>
+  </div>
+</main>
+
+<footer>
+  <p><a href="statistical-mechanics.html">Next: Statistical Mechanics Foundations →</a></p>
+</footer>
+
+<script src="socratic.js" defer></script>
+</body>
+</html>

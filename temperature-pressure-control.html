@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Molecular Dynamics — Temperature &amp; Pressure Control</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<header>
+  <h1>Molecular Dynamics Simulation: A Master's-Level Course</h1>
+  <nav>
+    <a href="index.html">1. Overview</a>
+    <a href="statistical-mechanics.html">2. Statistical Mechanics</a>
+    <a href="force-fields.html">3. Force Fields</a>
+    <a href="integration-algorithms.html">4. Integration Algorithms</a>
+    <a href="ensembles.html">5. Ensembles</a>
+    <a href="temperature-pressure-control.html" class="current">6. T/P Control</a>
+    <a href="boundary-conditions.html">7. Boundary Conditions</a>
+    <a href="analysis.html">8. Analysis Methods</a>
+    <a href="advanced-topics.html">9. Enhanced Sampling</a>
+    <a href="best-practices.html">10. Best Practices</a>
+  </nav>
+</header>
+
+<main>
+  <section>
+    <h2>Thermostats: Generating the Canonical Ensemble</h2>
+    <p>
+      A thermostat modifies the equations of motion to sample the NVT ensemble. Two main classes:
+    </p>
+    <ul>
+      <li><strong>Stochastic</strong> — Couple to a heat bath via random forces (Langevin, Andersen).</li>
+      <li><strong>Deterministic</strong> — Extend phase space with thermostat variables (Nose–Hoover, CSVR).</li>
+    </ul>
+    <p>
+      <strong>Desired properties:</strong> Correct canonical distribution, minimal perturbation of dynamics,
+      fast equilibration, ergodicity, computational efficiency.
+    </p>
+  </section>
+
+  <section>
+    <h2>Stochastic Thermostats</h2>
+    <p>
+      <strong>Langevin dynamics</strong> adds friction and random force:
+    </p>
+    <pre class="equation">m dv/dt = F(r) − γ m v + R(t)</pre>
+    <pre class="equation">⟨R(t)⟩ = 0,    ⟨R(t)R(t')⟩ = 2 γ m k<sub>B</sub>T δ(t−t')</pre>
+    <p>
+      γ (collision frequency) controls coupling strength. γ⁻¹ ~ 1–10 ps typical. Samples correct NVT
+      for any γ > 0. Damps high-frequency motions; alters kinetics/diffusion. Good for equilibration,
+      implicit solvent, and systems with poor energy conservation.
+    </p>
+    <p>
+      <strong>Andersen thermostat</strong> — Randomly reassign velocities from Maxwell–Boltzmann distribution
+      with collision frequency ν. ν⁻¹ ~ 0.1–1 ps. Strongly perturbs dynamics; excellent for equilibration.
+    </p>
+  </section>
+
+  <section>
+    <h2>Deterministic Thermostats</h2>
+    <p>
+      <strong>Nose–Hoover (NH)</strong> extends phase space with a thermostat variable s and "mass" Q:
+    </p>
+    <pre class="equation">dr/dt = p/m,    dp/dt = F − p s</pre>
+    <pre class="equation">ds/dt = (p²/m − k<sub>B</sub>T) / Q</pre>
+    <p>
+      Q controls response time; Q = 3N k<sub>B</sub>T τ². Samples correct NVT if ergodic.
+      <strong>Problem:</strong> Non-ergodic for small/harmonic systems (e.g., single oscillator).
+    </p>
+    <p>
+      <strong>Nose–Hoover Chains (NHC)</strong> — Chain of thermostats thermostatting each other.
+      Restores ergodicity. Standard in many codes (LAMMPS, GROMACS). 3–4 chains typical.
+    </p>
+    <p>
+      <strong>CSVR (Canonical Sampling through Velocity Rescaling)</strong> — Velocity rescaling with
+      stochastic term to generate correct fluctuations. Gentle, ergodic, minimal dynamics perturbation.
+    </p>
+  </section>
+
+  <section>
+    <h2>Barostats: Generating the Isobaric Ensemble</h2>
+    <p>
+      A barostat couples the system to a pressure bath by scaling coordinates and box vectors.
+    </p>
+    <p>
+      <strong>Berendsen barostat</strong> (weak coupling): scales box exponentially toward target pressure.
+      <strong>Not a true NPT ensemble</strong> — suppresses fluctuations. Use only for equilibration.
+    </p>
+    <pre class="equation">dV/dt = (V/τ<sub>P</sub>) (P<sub>target</sub> − P<sub>inst</sub>)</pre>
+    <p>
+      <strong>Parrinello–Rahman (PR)</strong> — Extended Lagrangian with box matrix h as dynamical variables.
+      Correct NPT ensemble. Allows anisotropic cell fluctuations (shape changes).
+    </p>
+    <pre class="equation">d²h/dt² = (V/W) (P<sub>inst</sub> − P<sub>ext</sub>) h<sup>−T</sup></pre>
+    <p>
+      W = "mass" of box degrees of freedom. Standard in GROMACS, LAMMPS.
+    </p>
+    <p>
+      <strong>MTTK (Martyna–Tuckerman–Tobias–Klein)</strong> — Modern formulation of Nose–Hoover + PR
+      with correct phase space measure. The gold standard for NPT. Used in GROMACS (mtk), NAMD, LAMMPS.
+    </p>
+  </section>
+
+  <section>
+    <h2>Coupling Schemes &amp; Best Practices</h2>
+    <table>
+      <thead>
+        <tr><th>Phase</th><th>Thermostat</th><th>Barostat</th><th>Time Constants</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Minimization</td><td>None</td><td>None</td><td>—</td></tr>
+        <tr><td>NVT Equil.</td><td>CSVR / NHC</td><td>None</td><td>τ<sub>T</sub> = 0.1–1 ps</td></tr>
+        <tr><td>NPT Equil.</td><td>CSVR / NHC</td><td>Berendsen (fast) → MTTK</td><td>τ<sub>T</sub> = 1 ps, τ<sub>P</sub> = 1–5 ps</td></tr>
+        <tr><td>Production NVT</td><td>CSVR / NHC</td><td>None</td><td>τ<sub>T</sub> = 1–5 ps</td></tr>
+        <tr><td>Production NPT</td><td>NHC / CSVR</td><td>MTTK</td><td>τ<sub>T</sub> = 1–5 ps, τ<sub>P</sub> = 5–20 ps</td></tr>
+      </tbody>
+    </table>
+    <p>
+      <strong>Key rules:</strong> (1) Never use Berendsen for production. (2) τ<sub>P</sub> > τ<sub>T</sub>
+      (pressure relaxes slower). (3) For membranes: semi-isotropic (xy-coupled) or surface tension.
+      (4) Avoid coupling solute and solvent separately unless needed (e.g., hot solvent/cold solute).
+    </p>
+  </section>
+
+  <section>
+    <h2>Artifacts &amp; Pitfalls</h2>
+    <ul>
+      <li><strong>Flying ice cube:</strong> Zero-frequency mode (center-of-mass motion) steals energy.
+          Fix: remove COM motion periodically (standard in all MD codes).</li>
+      <li><strong>Thermostat-induced artifacts:</strong> Langevin damps diffusion; NHC can have slow
+          energy drift if Q poorly chosen; CSVR is safest for dynamics.</li>
+      <li><strong>Barostat artifacts:</strong> Anisotropic PR/MTTK can cause box shape instability
+          (especially vacuum gaps). Use semi-isotropic for membranes.</li>
+      <li><strong>Dual thermostats:</strong> Separate solute/solvent thermostats can cause
+          "hot solvent/cold solute" non-equilibrium. Use single thermostat unless justified.</li>
+      <li><strong>Pressure calculation:</strong> Virial pressure has large fluctuations (100s bar).
+          Average over ps–ns; instantaneous pressure is meaningless.</li>
+    </ul>
+  </section>
+
+  <div class="socratic" data-question="tp-1">
+    <p>Derive the equation of motion for the Nose–Hoover thermostat variable s starting from the extended Lagrangian L = Σ ½ m ṙ² s² − U(r) + ½ Q ṡ² − 3N k<sub>B</sub>T ln s. Show that it generates the canonical distribution.</p>
+  </div>
+
+  <div class="socratic" data-question="tp-2">
+    <p>You are simulating a membrane protein in a lipid bilayer. The area per lipid is fluctuating wildly in NPT with MTTK barostat. What are the likely causes, and how would you modify the barostat settings to stabilize the simulation while maintaining the correct ensemble?</p>
+  </div>
+</main>
+
+<footer>
+  <p><a href="ensembles.html">← Previous: Ensembles</a> | <a href="boundary-conditions.html">Next: Boundary Conditions →</a></p>
+</footer>
+
+<script src="socratic.js" defer></script>
+</body>
+</html>

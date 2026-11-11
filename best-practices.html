@@ -1,0 +1,183 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Molecular Dynamics — Best Practices</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<header>
+  <h1>Molecular Dynamics Simulation: A Master's-Level Course</h1>
+  <nav>
+    <a href="index.html">1. Overview</a>
+    <a href="statistical-mechanics.html">2. Statistical Mechanics</a>
+    <a href="force-fields.html">3. Force Fields</a>
+    <a href="integration-algorithms.html">4. Integration Algorithms</a>
+    <a href="ensembles.html">5. Ensembles</a>
+    <a href="temperature-pressure-control.html">6. T/P Control</a>
+    <a href="boundary-conditions.html">7. Boundary Conditions</a>
+    <a href="analysis.html">8. Analysis Methods</a>
+    <a href="advanced-topics.html">9. Enhanced Sampling</a>
+    <a href="best-practices.html" class="current">10. Best Practices</a>
+  </nav>
+</header>
+
+<main>
+  <section>
+    <h2>System Preparation Checklist</h2>
+    <ol>
+      <li><strong>Structure quality:</strong> Check for missing atoms, alternate conformations, steric clashes (MolProbity).
+          Resolve with modeling tools (Modeller, Rosetta, PDBFixer).</li>
+      <li><strong>Protonation states:</strong> Assign at target pH (H++, PROPKA, H++). Key: His (HID/HIE/HIP),
+          Asp/Glu, Lys, N/C-termini. For constant pH MD, use λ-dynamics.</li>
+      <li><strong>Cofactors/ligands:</strong> Parametrize with GAFF2/CGenFF/OPLS. Validate charges (RESP/AM1-BCC),
+          torsions (scan vs. QM), and bonded parameters.</li>
+      <li><strong>Solvation:</strong> Box padding ≥ 1.0 nm (1.2 nm for charged systems). Use appropriate water model
+          matching force field (TIP3P for AMBER/CHARMM, SPC/E for GROMOS, OPC/TIP4P-Ew for accuracy).</li>
+      <li><strong>Ions:</strong> Neutralize + physiological concentration (150 mM NaCl). Place with Monte Carlo
+          (genion) to avoid clashes. Use ion parameters consistent with water model (Joung-Cheatham for TIP3P).</li>
+    </ol>
+  </section>
+
+  <section>
+    <h2>Energy Minimization</h2>
+    <ul>
+      <li><strong>Algorithm:</strong> L-BFGS (fast, robust) or steepest descent (for severe clashes).
+          Conjugate gradient is slower and rarely needed.</li>
+      <li><strong>Convergence:</strong> Max force < 100–500 kJ/mol/nm (10–50 kJ/mol/nm for production prep).
+          Energy should plateau.</li>
+      <li><strong>Restraints:</strong> Heavy-atom restraints (1000 kJ/mol/nm²) during initial minimization
+          of solvent; then unrestrained.</li>
+      <li><strong>Check:</strong> No "LINCS/SHAKE warnings" after minimization; no extreme energies.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Equilibration Protocol</h2>
+    <p>
+      Standard multi-stage equilibration (typical for protein in explicit solvent):
+    </p>
+    <table>
+      <thead>
+        <tr><th>Stage</th><th>Ensemble</th><th>Restraints</th><th>Duration</th><th>Purpose</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>1. Solvent relaxation</td><td>NVT</td><td>Protein heavy atoms</td><td>100–500 ps</td><td>Water equilibration around fixed solute</td></tr>
+        <tr><td>2. Density equilibration</td><td>NPT (Berendsen)</td><td>Protein heavy atoms</td><td>100–500 ps</td><td>Box size/density convergence</td></tr>
+        <tr><td>3. Gradual release</td><td>NPT (MTTK)</td><td>Decreasing (1000→0)</td><td>1–2 ns</td><td>Solute relaxation, pressure coupling</td></tr>
+        <tr><td>4. Unrestrained NPT</td><td>NPT (MTTK)</td><td>None</td><td>2–5 ns</td><td>Full equilibration, density stability</td></tr>
+      </tbody>
+    </table>
+    <p>
+      <strong>Monitoring:</strong> Temperature, pressure, density, total energy, potential energy, RMSD,
+      box dimensions. All should plateau. Run multiple replicates if possible.
+    </p>
+  </section>
+
+  <section>
+    <h2>Production Run Setup</h2>
+    <ul>
+      <li><strong>Ensemble:</strong> NVT (fixed density, better for free energy) or NPT (correct pressure).
+          Use NPT for final equilibration, then NVT for production if density is stable.</li>
+      <li><strong>Thermostat:</strong> CSVR or NHC (τ<sub>T</sub> = 1–5 ps). Avoid Langevin for production
+          unless implicit solvent or specific need for stochastic dynamics.</li>
+      <li><strong>Barostat (NPT):</strong> MTTK (τ<sub>P</sub> = 5–20 ps). Semi-isotropic for membranes.</li>
+      <li><strong>Time step:</strong> 2 fs (H-bonds constrained), 4 fs (HMR + all bonds constrained).
+          Validate energy conservation in short NVE test.</li>
+      <li><strong>Constraints:</strong> LINCS (GROMACS) or SHAKE (AMBER/NAMD/CHARMM). All bonds constrained
+          for 4 fs; H-bonds only for 2 fs. SETTLE for water.</li>
+      <li><strong>Cutoffs:</strong> 1.0–1.2 nm for LJ and real-space electrostatics. PME grid ≤ 0.12 nm.
+          Force switch for LJ. Dispersion correction ON.</li>
+      <li><strong>Output frequency:</strong> Coordinates every 10–100 ps (balance storage vs. resolution).
+          Energies every 1–2 ps. Compressed trajectory formats (xtc, dcd, netcdf).</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Validation &amp; Quality Control</h2>
+    <table>
+      <thead>
+        <tr><th>Check</th><th>Target / Method</th><th>Frequency</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Energy conservation (NVE test)</td><td>ΔE/E < 10⁻⁴ over 100 ps</td><td>After setup changes</td></tr>
+        <tr><td>Temperature stability</td><td>⟨T⟩ = target ± 1 K; fluctuations √⟨(ΔT)²⟩ correct</td><td>Continuous</td></tr>
+        <tr><td>Pressure stability (NPT)</td><td>⟨P⟩ = 1 bar ± 10–50 bar (instant. fluctuates 100s bar)</td><td>Continuous</td></tr>
+        <tr><td>Density convergence</td><td>Plateau within 1–2% of experimental</td><td>Equilibration</td></tr>
+        <tr><td>RMSD plateau</td><td>Stable (not drifting) after equilibration</td><td>Production</td></tr>
+        <tr><td>Area per lipid (membranes)</td><td>Match experimental ± 0.02 nm²</td><td>Equilibration</td></tr>
+        <tr><td>Diffusion coefficients</td><td>Water ~2.3×10⁻⁵ cm²/s (TIP3P); ions within 20%</td><td>Production</td></tr>
+        <tr><td>Ramachandran / rotamers</td><td>>95% favored; no outliers</td><td>Post-analysis</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section>
+    <h2>Reproducibility &amp; Documentation</h2>
+    <ul>
+      <li><strong>Version control:</strong> Git for all scripts, input files, analysis code.</li>
+      <li><strong>Software versions:</strong> Record MD engine (GROMACS/AMBER/NAMD/LAMMPS version),
+          force field version, water model, compiler, GPU driver.</li>
+      <li><strong>Random seeds:</strong> Set and record seeds for velocity generation, Langevin/Andersen,
+          REMD exchanges. Enables exact reproduction.</li>
+      <li><strong>Input files:</strong> Archive .mdp/.in/.inp files, topology, coordinates, parameter files.</li>
+      <li><strong>Metadata:</strong> Use standardized formats (e.g., YAML/JSON) for simulation metadata:
+          system composition, force field, ensemble, time step, cutoffs, thermostat/barostat parameters.</li>
+      <li><strong>Data management:</strong> Store raw trajectories (or representative subsets) in
+          institutional repositories. Use compressed formats.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Common Pitfalls &amp; How to Avoid Them</h2>
+    <table>
+      <thead>
+        <tr><th>Pitfall</th><th>Symptom</th><th>Solution</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Insufficient minimization</td><td>LINCS/SHAKE warnings, energy blow-up</td><td>Minimize until max force < 500 kJ/mol/nm</td></tr>
+        <tr><td>Bad protonation states</td><td>Unstable active site, wrong salt bridges</td><td>Check with PROPKA/H++; validate with pH titration</td></tr>
+        <tr><td>Wrong ion parameters</td><td>Ion pairing artifacts, wrong conductivity</td><td>Use ion params matched to water model (Joung-Cheatham)</td></tr>
+        <tr><td>Box too small</td><td>Protein interacts with self-image</td><td>Min 1.0 nm solute–box distance</td></tr>
+        <tr><td>Berendsen for production</td><td>Suppressed fluctuations, wrong ensemble</td><td>Use MTTK/NHC for production</td></tr>
+        <tr><td>Time step too large</td><td>Energy drift, bond length violations</td><td>Test NVE; reduce Δt if drift > 0.1%/ns</td></tr>
+        <tr><td>No dispersion correction</td><td>Wrong pressure, surface tension</td><td>Always enable LJ tail correction</td></tr>
+        <tr><td>Single replicate</td><td>Cannot assess convergence/errors</td><td>Run ≥3 independent replicates</td></tr>
+        <tr><td>Ignoring finite-size effects</td><td>Wrong diffusion, dielectric, charging free energy</td><td>Apply corrections; test larger box</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section>
+    <h2>Performance Optimization</h2>
+    <ul>
+      <li><strong>GPU acceleration:</strong> Use CUDA/OpenCL/HIP builds. Single GPU often > 10 CPU cores.
+          Multi-GPU with domain decomposition (GROMACS, AMBER, NAMD, LAMMPS).</li>
+      <li><strong>Mixed precision:</strong> FP32 for accumulation, FP16/TensorFloat-32 for computation.
+          Default on modern GPUs; verify energy conservation.</li>
+      <li><strong>Domain decomposition:</strong> Balance load across MPI ranks/GPUs.
+          Tune PME grid, cutoff, and DD cell size.</li>
+      <li><strong>Hydrogen Mass Repartitioning:</strong> 4 fs time step with minimal artifacts
+          for structural/thermodynamic properties.</li>
+      <li><strong>Trajectory compression:</strong> Write xtc/dcd with precision 1000 (0.001 nm)
+          or use lossy compression (zstd, blosc) for archival.</li>
+    </ul>
+  </section>
+
+  <div class="socratic" data-question="bp-1">
+    <p>Design a complete equilibration protocol for a membrane protein embedded in a POPC bilayer with 150 mM NaCl. Specify ensemble, restraints, duration, and monitoring for each stage. Explain why semi-isotropic pressure coupling is essential.</p>
+  </div>
+
+  <div class="socratic" data-question="bp-2">
+    <p>You are reviewing a paper where the authors ran a single 200 ns simulation of a protein-ligand complex and report a binding free energy from MM/GBSA with no error bars. List at least five methodological concerns you would raise as a reviewer.</p>
+  </div>
+</main>
+
+<footer>
+  <p><a href="advanced-topics.html">← Previous: Enhanced Sampling</a></p>
+</footer>
+
+<script src="socratic.js" defer></script>
+</body>
+</html>
